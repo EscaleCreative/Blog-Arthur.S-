@@ -242,18 +242,6 @@ export function Footer() {
         <div className="space-y-4">
           <h3 className="font-black text-xl uppercase tracking-widest border-b-2 border-white inline-block mb-4">Contact</h3>
           <ul className="space-y-4 font-bold text-gray-300">
-            <li>
-              <div className="text-[10px] uppercase text-gray-500 font-black tracking-widest mb-1">Email Direct</div>
-              <a href="mailto:arthur.sitaud@gmail.com" className="text-lg hover:text-white transition-colors border-b-2 border-transparent hover:border-white pb-1">
-                arthur.sitaud@gmail.com
-              </a>
-            </li>
-            <li>
-              <div className="text-[10px] uppercase text-gray-500 font-black tracking-widest mb-1">Téléphone</div>
-              <a href="tel:0678420966" className="text-lg hover:text-white transition-colors border-b-2 border-transparent hover:border-white pb-1">
-                06 78 42 09 66
-              </a>
-            </li>
             <li className="pt-2 space-y-2">
               <div><Link to="/login" className="hover:text-white transition-colors">Espace Admin</Link></div>
               <div><Link to="/archives" className="hover:text-white transition-colors">Archives Culture</Link></div>
