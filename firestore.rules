@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "christine.sitaud@escale-creative.com" ||
+         request.auth.token.email == "arthur.sitaud@gmail.com");
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['title']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             (!('price' in data) || (data.price is number && data.price >= 0)) &&
+             (!('duration' in data) || (data.duration is string && data.duration.size() < 50));
+    }
+
+    function isValidReservation(data) {
+      return data.keys().hasAll(['clientName', 'serviceId', 'date', 'time', 'status']) &&
+             data.clientName is string && data.clientName.size() > 0 && data.clientName.size() < 100 &&
+             data.serviceId is string &&
+             data.date is string &&
+             data.time is string &&
+             data.status in ['pending', 'confirmed', 'cancelled'];
+    }
+
+    function isValidContactRequest(data) {
+      return data.keys().hasAll(['firstName', 'lastName', 'email', 'message']) &&
+             data.firstName is string && data.firstName.size() > 0 && data.firstName.size() < 50 &&
+             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() < 50 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 2000;
+    }
+
+    function isValidLeSaviezVous(data) {
+      return data.keys().hasAll(['title', 'content', 'active']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.active is bool;
+    }
+
+    function isValidVerbatim(data) {
+      return data.keys().hasAll(['author', 'content']) &&
+             data.author is string && data.author.size() > 0 && data.author.size() < 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 1000;
+    }
+
+    function isValidMedia(data) {
+      return data.keys().hasAll(['name', 'url']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 255 &&
+             data.url is string && data.url.size() > 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId && 
+                    (request.resource.data.role == 'user' || 
+                     ((request.auth.token.email == "christine.sitaud@escale-creative.com" || request.auth.token.email == "arthur.sitaud@gmail.com") && request.resource.data.role == 'admin'));
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidService(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /reservations/{reservationId} {
+      allow read: if isAdmin();
+      allow create: if isValidReservation(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /contact_requests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if isValidContactRequest(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /le_saviez_vous/{articleId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidLeSaviezVous(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /verbatims/{verbatimId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidVerbatim(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /media_library/{mediaId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidMedia(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
